@@ -35,18 +35,36 @@
 
         .btn-bounce {
             background-color: var(--color-accent);
-            color: white;
+            color: white !important;
             padding: 1.25rem 2.5rem;
             border-radius: 9999px;
             display: inline-block;
             font-weight: 900;
             font-size: 1.1rem;
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
             box-shadow: 0 10px 20px -5px rgba(249, 115, 22, 0.4);
+            text-decoration: none;
+            cursor: pointer;
         }
 
         .btn-bounce:hover {
             transform: scale(1.05) rotate(-1deg);
+            opacity: 1 !important;
+        }
+
+        /* 追従予約ボタン（モバイル用） */
+        .floating-cta {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            z-index: 50;
+            width: 90%;
+            max-width: 400px;
+            transition: transform 0.5s ease;
+        }
+        .floating-cta.show {
+            transform: translateX(-50%) translateY(0);
         }
 
         .card-pop {
@@ -68,6 +86,7 @@
             border-radius: 2rem;
             font-size: 0.8rem;
             font-weight: 700;
+            display: inline-block;
         }
 
         .fade-in {
@@ -93,48 +112,198 @@
             color: #fde68a;
         }
 
-        /* --- 無限スライダー用のスタイル --- */
-        #slider-container {
+        /* --- 4分割アコーディオン・ギャラリーのスタイル --- */
+        .accordion-wrapper {
             display: flex;
-            height: 100%;
             width: 100%;
-            /* 初期状態ではアニメーションをONにしておく */
-            transition: transform 1s cubic-bezier(0.45, 0, 0.55, 1);
-        }
-        .slide-item {
-            flex: 0 0 100%; /* 各画像を横幅100%に固定 */
             height: 100%;
-            object-cover: cover;
+        }
+
+        .accordion-item {
+            position: relative;
+            flex: 1;
+            height: 100%;
+            transition: all 0.7s cubic-bezier(0.25, 1, 0.5, 1);
+            overflow: hidden;
+            cursor: pointer;
+            text-decoration: none; /* アンカー化に伴う追加 */
+        }
+
+        .accordion-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.7s ease;
+        }
+
+        /* パネル中央のラベル */
+        .accordion-label {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -40%);
+            color: white;
+            font-weight: 900;
+            font-size: 2rem;
+            letter-spacing: 0.2em;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.6);
+            white-space: nowrap;
+            opacity: 0;
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        /* デスクトップ：横並びホバー挙動 */
+        @media (min-width: 768px) {
+            .accordion-wrapper {
+                flex-direction: row;
+            }
+            /* マウスがラッパー内にあるとき、各アイテムを縮小 */
+            .accordion-wrapper:hover .accordion-item {
+                flex: 0.6;
+            }
+            /* ホバーされている特定のアイテムを拡大 */
+            .accordion-wrapper .accordion-item:hover {
+                flex: 3;
+            }
+            .accordion-item:hover .accordion-label {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+            .accordion-item:hover img {
+                transform: scale(1.05);
+            }
+
+            /* ヘッダー全体の状態変化 */
+            header:has(.accordion-item:hover) .header-text-elements {
+                opacity: 0;
+                visibility: hidden;
+                transform: translateY(-20px);
+            }
+            header:has(.accordion-item:hover) .header-button-element .btn-bounce {
+                opacity: 0.7;
+            }
+        }
+
+        /* スマートフォン：縦並びタップ挙動 */
+        @media (max-width: 767px) {
+            .accordion-wrapper {
+                flex-direction: column;
+            }
+            .accordion-item {
+                flex: 1;
+                width: 100%;
+            }
+            .accordion-item.active {
+                flex: 4;
+            }
+            .accordion-item.active .accordion-label {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+                font-size: 2.5rem;
+            }
+            .accordion-label {
+                font-size: 1.2rem;
+            }
+
+            /* タップ時のテキスト消失 */
+            header:has(.accordion-item.active) .header-text-elements {
+                opacity: 0;
+                visibility: hidden;
+            }
+            header:has(.accordion-item.active) .header-button-element .btn-bounce {
+                opacity: 0.7;
+            }
+        }
+
+        /* ヘッダーコンテンツの設定 */
+        .header-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            z-index: 20;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* テキストエリアは操作を透過させて背後の画像に干渉させる */
+            pointer-events: none; 
+        }
+
+        .header-text-elements {
+            transition: all 0.5s ease;
+            text-align: center;
+            width: 100%;
+        }
+
+        .header-button-element {
+            /* ボタンだけはクリックできるように設定 */
+            pointer-events: auto; 
+            z-index: 30;
+            margin-top: 1rem;
         }
     </style>
 </head>
 <body class="bg-pattern">
 
+    <!-- モバイル用追従CTA -->
+    <div id="floating-cta" class="floating-cta md:hidden">
+        <a href="https://reserve.489ban.net/client/sugomori-hyogo/0/plan/id/246191/stay?noSearch=1#plan-246191" target="_blank" class="btn-bounce w-full text-center shadow-2xl">今すぐ予約する！</a>
+    </div>
+
     <header class="relative min-h-[90vh] flex items-center justify-center p-6 overflow-hidden">
-        <div class="absolute inset-4 z-0 rounded-[3rem] overflow-hidden shadow-2xl">
-            <div id="slider-container">
-                <img src="images/P1060502.jpg" class="slide-item object-cover" onerror="this.src='https://images.unsplash.com/photo-1510798831971-661eb04b3739?q=80&w=2070&auto=format&fit=crop';">
-                <img src="images/2.jpg" class="slide-item object-cover" onerror="this.src='https://images.unsplash.com/photo-1449156001437-3a1621acbe26?q=80&w=2000&auto=format&fit=crop';">
-                <img src="images/3.jpg" class="slide-item object-cover" onerror="this.src='https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=2000&auto=format&fit=crop';">
-                <img src="images/4.jpg" class="slide-item object-cover" onerror="this.src='https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=2000&auto=format&fit=crop';">
+        <!-- 画像背景レイヤー -->
+        <div class="absolute inset-4 z-0 rounded-[3rem] overflow-hidden shadow-2xl bg-gray-100">
+            <div class="accordion-wrapper" id="accordion-gallery">
+                <!-- 1.jpg: LOG KOTI EXPERIENCE へジャンプ -->
+                <a href="#experience" class="accordion-item">
+                    <img src="images/1.jpg" alt="Gallery 1">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <span class="accordion-label">STAY</span>
+                </a>
+                <!-- 2.jpg: DOME SAUNA へジャンプ -->
+                <a href="#sauna" class="accordion-item">
+                    <img src="images/2.jpg" alt="Gallery 2">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <span class="accordion-label">SAUNA</span>
+                </a>
+                <!-- 3.jpg: KASSEL DINNER へジャンプ -->
+                <a href="#dinner" class="accordion-item">
+                    <img src="images/3.jpg" alt="Gallery 3">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <span class="accordion-label">DINNER</span>
+                </a>
+                <!-- 4.jpg: ACCESS へジャンプ -->
+                <a href="#access" class="accordion-item">
+                    <img src="images/4.jpg" alt="Gallery 4">
+                    <div class="absolute inset-0 bg-black/10"></div>
+                    <span class="accordion-label">LOCATION</span>
+                </a>
             </div>
-            <div class="absolute inset-0 bg-black/30 pointer-events-none"></div>
+            <div class="absolute inset-0 bg-black/15 pointer-events-none"></div>
         </div>
 
-        <div class="relative z-10 text-center text-white max-w-4xl px-4">
-            <div class="inline-block bg-white/20 backdrop-blur-md px-4 py-1 rounded-full mb-6 border border-white/30">
-                <p class="text-sm font-bold tracking-widest uppercase">Special Collaboration Stay</p>
+        <!-- テキスト・ボタンレイヤー -->
+        <div class="header-content px-4">
+            <div class="header-text-elements text-white drop-shadow-lg">
+                <div class="inline-block bg-white/20 backdrop-blur-md px-4 py-1 rounded-full mb-6 border border-white/30">
+                    <p class="text-sm font-bold tracking-widest uppercase">Special Collaboration Stay</p>
+                </div>
+                <h1 class="pop-title text-4xl md:text-7xl mb-8 leading-tight">
+                    泊まるのは、森。<br>
+                    食べるのは、名店。
+                </h1>
+                <p class="text-lg md:text-2xl mb-12 font-medium leading-relaxed">
+                    最高のログハウスと、憧れのディナー。<br class="hidden md:block">
+                    生野高原の“いいとこ取り”を詰め込んだ、<br class="hidden md:block">
+                    遊び心あふれる大人プランできました！
+                </p>
             </div>
-            <h1 class="pop-title text-4xl md:text-7xl mb-8 leading-tight">
-                泊まるのは、森。<br>
-                食べるのは、名店。
-            </h1>
-            <p class="text-lg md:text-2xl mb-12 font-medium leading-relaxed">
-                最高のログハウスと、憧れのディナー。<br class="hidden md:block">
-                生野高原の“いいとこ取り”を詰め込んだ、<br class="hidden md:block">
-                遊び心あふれる大人プランできました！
-            </p>
-            <a href="#booking" class="btn-bounce">予約する！</a>
+            <div class="header-button-element">
+                <a href="https://reserve.489ban.net/client/sugomori-hyogo/0/plan/id/246191/stay?noSearch=1#plan-246191" target="_blank" class="btn-bounce">予約する！</a>
+            </div>
         </div>
     </header>
 
@@ -156,11 +325,12 @@
         </div>
     </section>
 
-    <section class="py-20 px-6">
+    <!-- ID: experience -->
+    <section id="experience" class="py-20 px-6">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
             <div class="md:w-1/2">
                 <div class="relative">
-                    <img src="images/P1060563.jpg" alt="Log House Stay" class="w-full rounded-[2.5rem] shadow-2xl rotate-[-2deg] object-cover aspect-[4/3]" onerror="this.src='https://images.unsplash.com/photo-1542718610-a1d656d1884c?q=80&w=2070&auto=format&fit=crop';">
+                    <img src="images/5.jpg" alt="Log House Stay" class="w-full rounded-[2.5rem] shadow-2xl rotate-[-2deg] object-fit aspect-[4/3] bg-gray-100">
                     <div class="absolute -bottom-6 -right-6 bg-green-700 text-white p-6 rounded-3xl shadow-xl hidden md:block">
                         <p class="text-xl font-black">Private<br>Space!</p>
                     </div>
@@ -184,11 +354,12 @@
         </div>
     </section>
 
-    <section class="py-20 px-6 bg-orange-50 rounded-[3rem] mx-4 my-8">
+    <!-- ID: sauna -->
+    <section id="sauna" class="py-20 px-6 bg-orange-50 rounded-[3rem] mx-4 my-8">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row-reverse items-center gap-12">
             <div class="md:w-1/2">
                 <div class="relative">
-                    <img src="images/log01.jpg" alt="Dome Sauna" class="w-full rounded-[2.5rem] shadow-2xl rotate-[2deg] object-cover aspect-[4/3]" onerror="this.src='https://images.unsplash.com/photo-1515377905703-c4788e51af15?q=80&w=2070&auto=format&fit=crop';">
+                    <img src="images/6.jpg" alt="Dome Sauna" class="w-full rounded-[2.5rem] shadow-2xl rotate-[2deg] object-fit aspect-[4/3] bg-gray-100">
                     <div class="absolute -top-6 -left-6 bg-orange-500 text-white p-6 rounded-3xl shadow-xl hidden md:block">
                         <p class="text-xl font-black">Relax<br>Time!</p>
                     </div>
@@ -211,11 +382,12 @@
         </div>
     </section>
 
-    <section class="py-20 px-6 bg-green-50 rounded-[3rem] mx-4">
+    <!-- ID: dinner -->
+    <section id="dinner" class="py-20 px-6 bg-green-50 rounded-[3rem] mx-4">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center gap-12">
             <div class="md:w-1/2">
                 <div class="relative">
-                    <img src="images/kassel.jpg" alt="Kassel Experience" class="w-full rounded-[2.5rem] shadow-2xl rotate-[-2deg] object-cover aspect-[4/3]" onerror="this.src='https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=1974&auto=format&fit=crop';">
+                    <img src="images/7.jpg" alt="Kassel Experience" class="w-full rounded-[2.5rem] shadow-2xl rotate-[-2deg] object-fit aspect-[4/3] bg-gray-100">
                     <div class="absolute -bottom-6 -right-6 bg-orange-500 text-white p-6 rounded-3xl shadow-xl hidden md:block">
                         <p class="text-xl font-black">Special<br>Menu!</p>
                     </div>
@@ -253,7 +425,7 @@
     <section class="py-24 px-6">
         <div class="max-w-5xl mx-auto text-center px-4">
             <span class="badge mb-6">FRESH MORNING</span>
-            <h3 class="pop-title text-3xl md:text-5xl mb-12 leading-snug">朝は、森のピクニック気分で。</h3>
+            <h3 class="pop-title text-3xl md:text-5xl mb-12 leading-snug">朝は、森のピクニック気分で.</h3>
             <div class="grid md:grid-cols-2 gap-12 items-center">
                 <div class="card-pop p-8 text-left space-y-6">
                     <p class="text-gray-600 leading-loose">
@@ -263,7 +435,7 @@
                         <span class="font-bold text-green-700 underline underline-offset-8">「チェックアウトに追われない朝」</span>という最高の贅沢。
                     </p>
                     <div class="relative">
-                        <img src="https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?q=80&w=2070&auto=format&fit=crop" alt="Breakfast Basket" class="w-full h-56 object-cover rounded-2xl shadow-lg">
+                        <img src="images/8.jpg" alt="Breakfast Basket" class="w-full h-56 object-cover rounded-2xl shadow-lg bg-gray-100">
                         <p class="text-[10px] text-gray-400 mt-2 text-right">※画像はイメージです</p>
                     </div>
                 </div>
@@ -276,6 +448,33 @@
                         <h4 class="font-black text-green-700 text-lg mb-2">♪ Location Free</h4>
                         <p class="text-sm">デッキでもリビングでも、好きな場所が特等席。</p>
                     </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Customer Voice Section -->
+    <section class="py-24 px-6 bg-white">
+        <div class="max-w-6xl mx-auto">
+            <div class="text-center mb-16">
+                <span class="badge mb-4">CUSTOMER VOICE</span>
+                <h3 class="pop-title text-3xl md:text-4xl">体験したお客様の声</h3>
+            </div>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="card-pop p-8 italic text-gray-600 relative">
+                    <span class="text-6xl text-orange-200 absolute top-4 left-4 font-serif">“</span>
+                    <p class="relative z-10 pt-4 mb-6 text-sm">「夫の誕生日に利用しました。ログハウスの静けさとカッセルの豪華なディナー、どちらも最高で忘れられない一日になりました。送迎があるのが本当に助かりました！」</p>
+                    <p class="text-xs font-bold text-right text-gray-400">ー 30代 女性（ご夫婦で利用）</p>
+                </div>
+                <div class="card-pop p-8 italic text-gray-600 relative">
+                    <span class="text-6xl text-green-200 absolute top-4 left-4 font-serif">“</span>
+                    <p class="relative z-10 pt-4 mb-6 text-sm">「ドームサウナが最高に気持ちよかったです！サウナ後の高原の風は都会では絶対に味わえません。朝食バスケットを持ってテラスで食べる時間は至福でした。」</p>
+                    <p class="text-xs font-bold text-right text-gray-400">ー 20代 男性（カップルで利用）</p>
+                </div>
+                <div class="card-pop p-8 italic text-gray-600 relative">
+                    <span class="text-6xl text-orange-200 absolute top-4 left-4 font-serif">“</span>
+                    <p class="relative z-10 pt-4 mb-6 text-sm">「本格的なログハウスに一度泊まってみたかったのですが、食事にレストランでいただけるこのプランは完璧でした。お肉が本当に美味しくて感動しました！」</p>
+                    <p class="text-xs font-bold text-right text-gray-400">ー 40代 女性（ご友人と利用）</p>
                 </div>
             </div>
         </div>
@@ -313,6 +512,30 @@
                     </svg>
                     <h4 class="font-black text-xl mb-4">大人のための贅沢</h4>
                     <p class="text-sm leading-loose opacity-70">静かな空間で、大切な人と「食」と「空間」を楽しむご褒美タイム。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ID: access -->
+    <section id="access" class="py-24 px-6 bg-[#fcfcfc]">
+        <div class="max-w-4xl mx-auto text-center">
+            <span class="badge mb-6">ACCESS</span>
+            <h3 class="pop-title text-3xl md:text-4xl mb-12">どこにあるの？</h3>
+            <div class="card-pop overflow-hidden shadow-lg">
+                <div class="bg-gray-200 aspect-video relative">
+                    <!-- Google Maps Iframe: Marked location for SUGOMoRI Resort Ikuno Highland -->
+                    <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3257.654217112003!2d134.81170287635676!3d35.1654178581405!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3555395780a40237%3A0x7d6d3763f975d9e!2zU1VHT01vUknjg6rjgr7jg7zjg4TnlJ_ph47pq5jljp8!5e0!3m2!1sja!2sjp!4v1715843431674!5m2!1sja!2sjp" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+                </div>
+                <div class="p-8 text-left grid md:grid-cols-2 gap-8">
+                    <div>
+                        <h4 class="font-bold text-green-800 mb-2">● お車でお越しの方</h4>
+                        <p class="text-sm text-gray-600">播但連絡道路「生野ランプ」から約10分。京阪神から約1時間半の好アクセス！</p>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-green-800 mb-2">● 電車でお越しの方</h4>
+                        <p class="text-sm text-gray-600">JR播談線「生野駅」下車。タクシーで約10分。</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -357,8 +580,8 @@
                         </li>
                     </ul>
                     <div class="mt-12 text-center">
-                        <a href="#" onclick="alert('予約システムへ遷移します')" class="btn-bounce w-full md:w-auto px-12">予約する！</a>
-                        <p class="mt-6 text-[10px] text-gray-400 tracking-widest uppercase">※キャンセルポリシーは予約サイトにてご確認ください</p>
+                        <a href="https://reserve.489ban.net/client/sugomori-hyogo/0/plan/id/246191/stay?noSearch=1#plan-246191" target="_blank" class="btn-bounce w-full md:w-auto px-12">予約サイトへ進む！</a>
+                        <p class="mt-6 text-[10px] text-gray-400 tracking-widest uppercase">※外部予約サイトへ遷移します</p>
                     </div>
                 </div>
             </div>
@@ -383,44 +606,20 @@
     </footer>
 
     <script>
-        // --- 無限ループスライダー制御 ---
-        const sliderContainer = document.getElementById('slider-container');
-        const slides = document.querySelectorAll('.slide-item');
-        const slideCount = slides.length;
+        // --- 4分割アコーディオン制御（モバイルタップ用） ---
+        const accordionItems = document.querySelectorAll('.accordion-item');
+        const accordionWrapper = document.getElementById('accordion-gallery');
         
-        // 最初のスライドをコピーして最後に追加
-        const firstClone = slides[0].cloneNode(true);
-        sliderContainer.appendChild(firstClone);
-        
-        let currentIndex = 0;
-        let isTransitioning = false;
+        accordionItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                accordionItems.forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                accordionWrapper.classList.add('has-active');
+            });
+        });
 
-        function updateSlider() {
-            if (isTransitioning) return;
-            isTransitioning = true;
-
-            currentIndex++;
-            sliderContainer.style.transition = "transform 1s cubic-bezier(0.45, 0, 0.55, 1)";
-            sliderContainer.style.transform = `translateX(-${currentIndex * 100}%)`;
-
-            // アニメーション終了時の処理
-            sliderContainer.addEventListener('transitionend', () => {
-                // クローン（5枚目）に到達したら、アニメーションなしで本物の1枚目に戻る
-                if (currentIndex >= slideCount) {
-                    sliderContainer.style.transition = "none";
-                    currentIndex = 0;
-                    sliderContainer.style.transform = `translateX(0)`;
-                }
-                isTransitioning = false;
-            }, { once: true });
-        }
-
-        // 3秒ごとに実行
-        setInterval(updateSlider, 3000);
-
-
-        // --- スクロールアニメーション (既設) ---
-        const observerOptions = { threshold: 0.15 };
+        // --- スクロールアニメーション ---
+        const observerOptions = { threshold: 0.1 };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -432,6 +631,16 @@
         document.querySelectorAll('section, div[class*="md:w-"], .card-pop').forEach(el => {
             el.classList.add('fade-in');
             observer.observe(el);
+        });
+
+        // --- モバイル追従CTAの表示制御 ---
+        const floatingCta = document.getElementById('floating-cta');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 300) {
+                floatingCta.classList.add('show');
+            } else {
+                floatingCta.classList.remove('show');
+            }
         });
     </script>
 </body>
